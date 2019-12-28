@@ -47,12 +47,16 @@ updatePCRegister :: (Int -> Int) -> CPU6502 -> CPU6502
 updatePCRegister updateFunc cpu@CPU6502{registers = registers@Registers6502{pc = pcValue}} = cpu { registers = registers{pc = updateFunc pcValue}}
 
 getXRegister :: CPU6502 -> Int 
-getXRegister = x.registers 
+getXRegister = x.registers
+setXRegister :: Int -> CPU6502 -> CPU6502
+setXRegister value cpu = updateXRegister (\_ -> value) cpu
 updateXRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
 updateXRegister updateFunc cpu@CPU6502{registers = registers@Registers6502{x = xValue}} = cpu { registers = registers{x = updateFunc xValue}}
 
 getYRegister :: CPU6502 -> Int 
 getYRegister = y.registers 
+setYRegister :: Int -> CPU6502 -> CPU6502
+setYRegister value cpu = updateYRegister (\_ -> value) cpu
 updateYRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
 updateYRegister updateFunc cpu@CPU6502{registers = registers@Registers6502{y = yValue}} = cpu { registers = registers{y = updateFunc yValue}}
 
