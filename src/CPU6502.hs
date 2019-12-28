@@ -21,10 +21,13 @@ data Registers6502 = Registers6502 {
     , flagI :: Bool
     , flagD :: Bool} deriving Show
 data CPU6502 = CPU6502 { memory :: ListMemory, registers :: Registers6502, tick :: Int} deriving Show
-defaultRegisters = Registers6502 {acc = 0, pc = 0x0100, s = 0, x = 0, y = 0, flagC = False, flagZ = False, flagN = False, flagV = False, flagI = False, flagD = False}
+defaultRegisters = Registers6502 {acc = 0, pc = 0x8000, s = 0, x = 0, y = 0, flagC = False, flagZ = False, flagN = False, flagV = False, flagI = False, flagD = False}
 
 cpuFromMemory :: ListMemory -> CPU6502
 cpuFromMemory memory = CPU6502 { memory = memory, registers = defaultRegisters, tick = 0 }
+
+newCPU :: MemoryBuilder -> CPU6502
+newCPU memoryBuilder = cpuFromMemory $ memoryBuilder []
 
 addTicks :: Int -> CPU6502 -> CPU6502
 addTicks tick cpu@CPU6502{tick = oldValue} = cpu{tick = oldValue + tick}
@@ -101,7 +104,7 @@ decodeNextOperation :: CPU6502 -> CPUOperation
 decodeNextOperation cpu = 
     case command of
         0x65 -> adc.argZP.(addTicks 3)
-        0x76 -> adc.argZPX.(addTicks 4)
+        0x75 -> adc.argZPX.(addTicks 4)
         0x6D -> adc.argABS.(addTicks 4)
         0x7D -> adc.argABSX.(addTicks 4)
         0x79 -> adc.argABSY.(addTicks 4)
@@ -151,7 +154,7 @@ argZP :: CPU6502 -> (MemoryAccessor, CPU6502)
 argZP cpu = ( MemoryAccessor (read8 ( (getPCRegister cpu)  + 1)  cpu) cpu, updatePCRegister (2+) cpu) 
 
 argZPX :: CPU6502 -> (MemoryAccessor, CPU6502)
-argZPX cpu = ( MemoryAccessor (read8 argAddress cpu) cpu, updatePCRegister (2+) cpu) where
+argZPX cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (2+) cpu) where
     argAddress = getXRegister cpu + ( read8 ((getPCRegister cpu) + 1) cpu)
 
 argABS :: CPU6502 -> (MemoryAccessor, CPU6502)

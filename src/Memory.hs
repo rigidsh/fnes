@@ -15,6 +15,15 @@ class Memory a where
 
 type ListMemory = [[Int]] 
 
+type MemoryBuilder = ListMemory -> ListMemory 
+
+(<->) :: Int -> [Int] -> MemoryBuilder 
+(<->) address (s:xs) memory = write8 address s $ (<->) (address + 1) xs memory
+(<->) address [] memory = memory
+
+test = 
+    (0x0000 <-> [1, 2, 3, 4]).
+    (0x0004 <-> [5, 5, 7, 8])
 
 decodeAddress :: Int -> (Int, Int)
 decodeAddress address = ( shiftR (address .&. 0xFF00) 8, address .&. 0xFF)
