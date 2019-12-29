@@ -113,6 +113,8 @@ decodeNextOperation cpu =
         0x7D -> adc.argABSX.(addTicks 4)
         0x79 -> adc.argABSY.(addTicks 4)
         0x69 -> adc.argIMM.(addTicks 2)
+        0x61 -> adc.argINDX.(addTicks 6)
+        0x71 -> adc.argINDY.(addTicks 5)
         0xEA -> nop.argNOP.(addTicks 2)
         0xE8 -> inx.argNOP.(addTicks 2)
         0xCA -> dex.argNOP.(addTicks 2)
@@ -172,6 +174,16 @@ argABSX cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (3+) cpu) where
 argABSY :: CPU6502 -> (MemoryAccessor, CPU6502)
 argABSY cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (3+) cpu) where
     argAddress =  getYRegister cpu + valueFrom16 (read16 ( (getPCRegister cpu)  + 1)  cpu)
+
+argINDX :: CPU6502 -> (MemoryAccessor, CPU6502)
+argINDX cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (2+) cpu) where
+    indAddress = getXRegister cpu + ( read8 ((getPCRegister cpu) + 1) cpu)
+    argAddress = valueFrom16 $ read16 indAddress cpu 
+
+argINDY :: CPU6502 -> (MemoryAccessor, CPU6502)
+argINDY cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (2+) cpu) where
+    indAddress = read8 ((getPCRegister cpu) + 1) cpu
+    argAddress = getYRegister cpu +  (valueFrom16 $ read16 indAddress cpu) 
 
 argIMM :: CPU6502 -> (MemoryAccessor, CPU6502)
 argIMM cpu = (MemoryAccessor ((getPCRegister cpu) + 1) cpu, updatePCRegister (2+) cpu)
