@@ -180,39 +180,45 @@ argNOP :: CPU6502 -> (MemoryAccessor, CPU6502)
 argNOP cpu = (NOPMemoryAccessor, cpu)
 
 argZP :: CPU6502 -> (MemoryAccessor, CPU6502)
-argZP cpu = ( MemoryAccessor (read8 ( (getPCRegister cpu))  cpu) cpu, updatePCRegister (1+) cpu) 
+argZP cpu = ( MemoryAccessor arg newCPU, newCPU) where
+    (arg, newCPU) = readNextWord8 cpu
 
 argZPX :: CPU6502 -> (MemoryAccessor, CPU6502)
-argZPX cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (1+) cpu) where
-    argAddress = getXRegister cpu + ( read8 ((getPCRegister cpu)) cpu)
+argZPX cpu = ( MemoryAccessor argAddress newCPU, newCPU) where
+    argAddress = getXRegister newCPU  + arg
+    (arg, newCPU) = readNextWord8 cpu
 
 argABS :: CPU6502 -> (MemoryAccessor, CPU6502)
-argABS cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (2+) cpu) where
-    argAddress =  valueFrom16 (read16 ( (getPCRegister cpu))  cpu)
+argABS cpu = ( MemoryAccessor arg newCPU, newCPU) where
+    (arg, newCPU) = readNextWord16 cpu
 
 argABSX :: CPU6502 -> (MemoryAccessor, CPU6502)
-argABSX cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (2+) cpu) where
-    argAddress =  getXRegister cpu + valueFrom16 (read16 ( (getPCRegister cpu))  cpu)
+argABSX cpu = ( MemoryAccessor argAddress newCPU, newCPU) where
+    argAddress =  getXRegister newCPU + arg
+    (arg, newCPU) = readNextWord16 cpu
 
 argABSY :: CPU6502 -> (MemoryAccessor, CPU6502)
-argABSY cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (2+) cpu) where
-    argAddress =  getYRegister cpu + valueFrom16 (read16 ( (getPCRegister cpu))  cpu)
+argABSY cpu = ( MemoryAccessor argAddress newCPU, newCPU) where
+    argAddress =  getYRegister newCPU + arg 
+    (arg, newCPU) = readNextWord16 cpu
 
 argINDX :: CPU6502 -> (MemoryAccessor, CPU6502)
-argINDX cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (1+) cpu) where
-    indAddress = getXRegister cpu + ( read8 ((getPCRegister cpu)) cpu)
-    argAddress = valueFrom16 $ read16 indAddress cpu 
+argINDX cpu = ( MemoryAccessor argAddress newCPU, newCPU) where
+    indAddress = getXRegister newCPU + arg
+    argAddress = valueFrom16 $ read16 indAddress newCPU 
+    (arg, newCPU) = readNextWord8 cpu
 
 argINDY :: CPU6502 -> (MemoryAccessor, CPU6502)
-argINDY cpu = ( MemoryAccessor argAddress cpu, updatePCRegister (1+) cpu) where
-    indAddress = read8 ((getPCRegister cpu)) cpu
-    argAddress = getYRegister cpu +  (valueFrom16 $ read16 indAddress cpu) 
+argINDY cpu = ( MemoryAccessor argAddress newCPU, newCPU) where
+    argAddress = getYRegister newCPU +  (valueFrom16 $ read16 arg newCPU) 
+    (arg, newCPU) = readNextWord8 cpu
 
 argIMM :: CPU6502 -> (MemoryAccessor, CPU6502)
 argIMM cpu = (MemoryAccessor ((getPCRegister cpu)) cpu, updatePCRegister (1+) cpu)
 
 argREL :: CPU6502 -> (MemoryAccessor, CPU6502)
-argREL cpu = (ConstMemoryAccessor (toSignedByte (read8 ((getPCRegister cpu)) cpu)), updatePCRegister (1+) cpu) 
+argREL cpu = (ConstMemoryAccessor (toSignedByte arg), newCPU) where
+    (arg, newCPU) = readNextWord8 cpu
 
 toSignedByte :: Int -> Int
 toSignedByte x 
