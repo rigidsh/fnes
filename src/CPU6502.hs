@@ -8,23 +8,36 @@ import Data.Bits
 import Memory
 
 
-data Registers6502 = Registers6502 { 
-    acc :: Int
-    , pc :: Int
-    , s :: Int
-    , x :: Int
-    , y :: Int
+data CPU6502 = CPU6502 { 
+    memory :: ListMemory
+    , tick :: Int
+    , registerACC:: Int
+    , registerPC :: Int
+    , registerS :: Int
+    , registerX :: Int
+    , registerY :: Int
     , flagC :: Bool
     , flagZ :: Bool
     , flagN :: Bool
     , flagV :: Bool
     , flagI :: Bool
     , flagD :: Bool} deriving Show
-data CPU6502 = CPU6502 { memory :: ListMemory, registers :: Registers6502, tick :: Int} deriving Show
-defaultRegisters = Registers6502 {acc = 0, pc = 0x8000, s = 0, x = 0, y = 0, flagC = False, flagZ = False, flagN = False, flagV = False, flagI = False, flagD = False}
 
 cpuFromMemory :: ListMemory -> CPU6502
-cpuFromMemory memory = CPU6502 { memory = memory, registers = defaultRegisters, tick = 0 }
+cpuFromMemory memory = CPU6502 { 
+    memory = memory, 
+    tick = 0,
+    registerACC = 0,
+    registerPC = 0x8000,
+    registerS = 0,
+    registerX = 0,
+    registerY = 0,
+    flagC = False,
+    flagZ = False,
+    flagN = False,
+    flagV = False,
+    flagI = False,
+    flagD = False}
 
 newCPU :: MemoryBuilder -> CPU6502
 newCPU memoryBuilder = cpuFromMemory $ memoryBuilder []
@@ -33,62 +46,62 @@ addTicks :: Int -> CPU6502 -> CPU6502
 addTicks tick cpu@CPU6502{tick = oldValue} = cpu{tick = oldValue + tick}
 
 getAccRegister :: CPU6502 -> Int 
-getAccRegister = acc.registers 
+getAccRegister = registerACC 
 setAccRegister :: Int -> CPU6502 -> CPU6502
 setAccRegister value = updateAccRegister (\_ -> value)
 updateAccRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
-updateAccRegister updateFunc cpu@CPU6502{registers = registers@Registers6502{acc = accValue}} = cpu { registers = registers{acc = updateFunc accValue}}
+updateAccRegister updateFunc cpu@CPU6502{registerACC = accValue} = cpu { registerACC = updateFunc accValue}
 
 getPCRegister :: CPU6502 -> Int 
-getPCRegister = pc.registers 
+getPCRegister = registerPC 
 setPCRegister :: Int -> CPU6502 -> CPU6502
 setPCRegister value cpu = updatePCRegister (\_ -> value) cpu
 updatePCRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
-updatePCRegister updateFunc cpu@CPU6502{registers = registers@Registers6502{pc = pcValue}} = cpu { registers = registers{pc = updateFunc pcValue}}
+updatePCRegister updateFunc cpu@CPU6502{registerPC = pcValue} = cpu { registerPC = updateFunc pcValue}
 
 getXRegister :: CPU6502 -> Int 
-getXRegister = x.registers
+getXRegister = registerX
 setXRegister :: Int -> CPU6502 -> CPU6502
 setXRegister value cpu = updateXRegister (\_ -> value) cpu
 updateXRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
-updateXRegister updateFunc cpu@CPU6502{registers = registers@Registers6502{x = xValue}} = cpu { registers = registers{x = updateFunc xValue}}
+updateXRegister updateFunc cpu@CPU6502{registerX = xValue} = cpu { registerX = updateFunc xValue}
 
 getYRegister :: CPU6502 -> Int 
-getYRegister = y.registers 
+getYRegister = registerY 
 setYRegister :: Int -> CPU6502 -> CPU6502
 setYRegister value cpu = updateYRegister (\_ -> value) cpu
 updateYRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
-updateYRegister updateFunc cpu@CPU6502{registers = registers@Registers6502{y = yValue}} = cpu { registers = registers{y = updateFunc yValue}}
+updateYRegister updateFunc cpu@CPU6502{registerY = yValue} = cpu { registerY = updateFunc yValue}
 
 getFlagC :: CPU6502 -> Bool
-getFlagC = flagC.registers
+getFlagC = flagC
 setFlagC :: Bool -> CPU6502 -> CPU6502
-setFlagC value cpu@CPU6502{registers = registers} = cpu{registers = registers{flagC = value}}
+setFlagC value cpu = cpu{flagC = value}
 
 getFlagZ :: CPU6502 -> Bool
-getFlagZ = flagZ.registers
+getFlagZ = flagZ
 setFlagZ :: Bool -> CPU6502 -> CPU6502
-setFlagZ value cpu@CPU6502{registers = registers} = cpu{registers = registers{flagZ = value}}
+setFlagZ value cpu = cpu{flagZ = value}
 
 getFlagN :: CPU6502 -> Bool
-getFlagN = flagN.registers
+getFlagN = flagN
 setFlagN :: Bool -> CPU6502 -> CPU6502
-setFlagN value cpu@CPU6502{registers = registers} = cpu{registers = registers{flagN = value}}
+setFlagN value cpu = cpu{flagN = value}
 
 getFlagV :: CPU6502 -> Bool
-getFlagV = flagV.registers
+getFlagV = flagV
 setFlagV :: Bool -> CPU6502 -> CPU6502
-setFlagV value cpu@CPU6502{registers = registers} = cpu{registers = registers{flagV = value}}
+setFlagV value cpu = cpu{flagV = value}
 
 getFlagI :: CPU6502 -> Bool
-getFlagI = flagI.registers
+getFlagI = flagI
 setFlagI :: Bool -> CPU6502 -> CPU6502
-setFlagI value cpu@CPU6502{registers = registers} = cpu{registers = registers{flagI = value}}
+setFlagI value cpu = cpu{flagI = value}
 
 getFlagD :: CPU6502 -> Bool
-getFlagD = flagV.registers
+getFlagD = flagV
 setFlagD :: Bool -> CPU6502 -> CPU6502
-setFlagD value cpu@CPU6502{registers = registers} = cpu{registers = registers{flagD = value}}
+setFlagD value cpu = cpu{flagD = value}
 
 instance Memory CPU6502 where
     read8 address cpu  = read8 address (memory cpu) 
@@ -139,8 +152,9 @@ decodeNextOperation cpu =
         0x9D -> sta.argABSX.(addTicks 5)
         0x99 -> sta.argABSY.(addTicks 5)
 
-
     where command = read8 (getPCRegister cpu) cpu 
+
+
 
 data MemoryAccessor = MemoryAccessor Int CPU6502 | ConstMemoryAccessor Int | NOPMemoryAccessor
 readValue :: MemoryAccessor -> Int
