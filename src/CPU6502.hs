@@ -13,6 +13,7 @@ data CPU6502 = CPU6502 {
     , tick :: Int
     , registerACC:: Int
     , registerPC :: Int
+    , pcCache :: [Int]
     , registerS :: Int
     , registerX :: Int
     , registerY :: Int
@@ -30,6 +31,7 @@ cpuFromMemory memory = CPU6502 {
     tick = 0,
     registerACC = 0,
     registerPC = 0x8000,
+    pcCache = [],
     registerS = 0,
     registerX = 0,
     registerY = 0,
@@ -57,16 +59,28 @@ getPCRegister :: CPU6502 -> Int
 getPCRegister = registerPC 
 setPCRegister :: Int -> CPU6502 -> CPU6502
 setPCRegister value cpu = updatePCRegister (\_ -> value) cpu
+-- TODO: ckear pc cache
 updatePCRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
 updatePCRegister updateFunc cpu@CPU6502{registerPC = pcValue} = cpu { registerPC = updateFunc pcValue}
 
 readNextWord8 :: CPU6502 -> (Int, CPU6502)
-readNextWord8 cpu = (read8 pc cpu, updatePCRegister (1+) cpu) where 
+readNextWord8 cpu = (value, updatePCRegister (1+) newCPU) where 
     pc = getPCRegister cpu
+    (value, newCPU) = readWord8Cached pc (pcCache cpu) cpu
+    
+readWord8Cached :: Int -> [Int] -> CPU6502 -> (Int, CPU6502)
+readWord8Cached address []  cpu = (value, cpu{pcCache=newCache}) where
+    (pageNumber, offset) = decodeAddress address
+    page = getMemoryPage (memory cpu) pageNumber
+    cache = drop offset page
+    (value:newCache) = cache
+readWord8Cached address cache cpu = (value, cpu{pcCache=newCache}) where
+    (value:newCache) = cache
 
 readNextWord16 :: CPU6502 -> (Int, CPU6502)
-readNextWord16 cpu = (valueFrom16 (read16 pc cpu), updatePCRegister (2+) cpu) where 
-    pc = getPCRegister cpu
+readNextWord16 cpu = (valueFrom16 ((b2, b1)), cpu2) where 
+    (b1, cpu1) = readNextWord8 cpu
+    (b2, cpu2) = readNextWord8 cpu1
 
 getXRegister :: CPU6502 -> Int 
 getXRegister = registerX
@@ -161,9 +175,6 @@ decodeNextOperation command =
         0x8D -> sta.argABS.(addTicks 4)
         0x9D -> sta.argABSX.(addTicks 5)
         0x99 -> sta.argABSY.(addTicks 5)
-
-
-
 
 data MemoryAccessor = MemoryAccessor Int CPU6502 | ConstMemoryAccessor Int | NOPMemoryAccessor
 readValue :: MemoryAccessor -> Int
