@@ -200,7 +200,21 @@ valueFrom16 :: (Int, Int) -> Int
 valueFrom16 (b2, b1) = b2*2^8 + b1
 
 adc :: (MemoryAccessor, CPU6502) -> CPU6502 
-adc (arg, cpu) = updateAccRegister (\v -> v + (readValue arg)) cpu   
+adc (arg, cpu) = 
+     ((setFlagC newCarryFlagValue)
+     .(setFlagZ newZeroFlagValue)
+     .(setFlagN newSignFlagValue)
+     .(setFlagV newOverflowFlagValue)
+     .(setAccRegister result)) cpu where
+        accValue = getAccRegister cpu
+        argValue = readValue arg
+        carryFlagValue = getFlagC cpu
+        sum = accValue + argValue + if carryFlagValue then 1 else 0
+        newCarryFlagValue = if sum > 0xFF then True else False
+        newZeroFlagValue = if result == 0 then True else False
+        newSignFlagValue = if result > 0x7F then True else False
+        newOverflowFlagValue = if (((accValue `xor`argValue) .&. 0x80) == 0) && (((accValue `xor` result) .&. 0x80) /= 0) then True else False
+        result  = if newCarryFlagValue then sum - 0x100 else sum
 
 bcc :: (MemoryAccessor, CPU6502) -> CPU6502
 bcc (arg, cpu) = if (getFlagC cpu) == False then setPCRegister ((getPCRegister cpu) + (readValue arg))  cpu else cpu
