@@ -228,7 +228,8 @@ argINDY cpu = ( MemoryAccessor argAddress newCPU, newCPU) where
     (arg, newCPU) = readNextWord8 cpu
 
 argIMM :: CPU6502 -> (MemoryAccessor, CPU6502)
-argIMM cpu = (MemoryAccessor ((getPCRegister cpu)) cpu, updatePCRegister (1+) cpu)
+argIMM cpu = (ConstMemoryAccessor arg, newCPU) where
+    (arg, newCPU) = readNextWord8 cpu
 
 argREL :: CPU6502 -> (MemoryAccessor, CPU6502)
 argREL cpu = (ConstMemoryAccessor (toSignedByte arg), newCPU) where

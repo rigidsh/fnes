@@ -9,10 +9,14 @@ import Memory
 main :: IO()
 
 main = do
-    print $ run1Sec $ runProgramm cpu
+    print $ registerACC $ run1Sec $ runProgramm cpu
 
 run1Sec :: [CPU6502] -> CPU6502
 run1Sec (x:xs) = if tick x < 1790000 then run1Sec xs else x 
+
+
+run1Min :: [CPU6502] -> CPU6502
+run1Min (x:xs) = if tick x < 60*1790000 then run1Min xs else x 
 
 runProgramm :: CPU6502 -> [CPU6502]
 runProgramm cpu = nextItem:(runProgramm nextItem) where
