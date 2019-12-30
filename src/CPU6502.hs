@@ -58,10 +58,13 @@ updateAccRegister updateFunc cpu@CPU6502{registerACC = accValue} = cpu { registe
 getPCRegister :: CPU6502 -> Int 
 getPCRegister = registerPC 
 setPCRegister :: Int -> CPU6502 -> CPU6502
-setPCRegister value cpu = updatePCRegister (\_ -> value) cpu
+setPCRegister value cpu = (clearPCCache.(updatePCRegister (\_ -> value))) cpu
 -- TODO: ckear pc cache
 updatePCRegister :: (Int -> Int) -> CPU6502 -> CPU6502 
 updatePCRegister updateFunc cpu@CPU6502{registerPC = pcValue} = cpu { registerPC = updateFunc pcValue}
+
+clearPCCache :: CPU6502 -> CPU6502
+clearPCCache cpu = cpu{pcCache = []}
 
 readNextWord8 :: CPU6502 -> (Int, CPU6502)
 readNextWord8 cpu = (value, updatePCRegister (1+) newCPU) where 
